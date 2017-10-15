@@ -1414,11 +1414,17 @@ static void SendSDT( mtime_t i_dts )
 /*****************************************************************************
  * SendEIT
  *****************************************************************************/
+static bool handle_epg( int i_table_id )
+{
+    return (i_table_id == EIT_TABLE_ID_PF_ACTUAL ||
+       (i_table_id >= EIT_TABLE_ID_SCHED_ACTUAL_FIRST &&
+        i_table_id <= EIT_TABLE_ID_SCHED_ACTUAL_LAST));
+}
+
 static void SendEIT( sid_t *p_sid, mtime_t i_dts, uint8_t *p_eit )
 {
     uint8_t i_table_id = psi_get_tableid( p_eit );
-    bool b_epg = i_table_id >= EIT_TABLE_ID_SCHED_ACTUAL_FIRST &&
-                 i_table_id <= EIT_TABLE_ID_SCHED_ACTUAL_LAST;
+    bool b_epg = handle_epg( i_table_id );
     uint16_t i_onid = eit_get_onid(p_eit);
     int i;
 
@@ -3009,7 +3015,8 @@ static void HandleEIT( uint16_t i_pid, uint8_t *p_eit, mtime_t i_dts )
         return;
     }
 
-    if ( i_table_id != EIT_TABLE_ID_PF_ACTUAL )
+    bool b_epg = handle_epg( i_table_id );
+    if ( ! b_epg )
         goto out_eit;
 
     /* We do not use psi_table_* primitives as the spec allows for holes in
@@ -3038,7 +3045,7 @@ static void HandleEIT( uint16_t i_pid, uint8_t *p_eit, mtime_t i_dts )
 
 out_eit:
     SendEIT( p_sid, i_dts, p_eit );
-    if ( i_table_id != EIT_TABLE_ID_PF_ACTUAL )
+    if ( ! b_epg )
         free( p_eit );
 }
 
@@ -3097,9 +3104,7 @@ static void HandleSection( uint16_t i_pid, uint8_t *p_section, mtime_t i_dts )
         break;
 
     default:
-        if ( i_table_id == EIT_TABLE_ID_PF_ACTUAL ||
-             (i_table_id >= EIT_TABLE_ID_SCHED_ACTUAL_FIRST &&
-              i_table_id <= EIT_TABLE_ID_SCHED_ACTUAL_LAST) )
+        if ( handle_epg( i_table_id ) )
         {
             HandleEIT( i_pid, p_section, i_dts );
             break;

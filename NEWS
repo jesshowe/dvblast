@@ -1,3 +1,7 @@
+Changes between 3.2 and -next
+-----------------------------
+  * Add support for schedule EIT (only present/following was outputted before)
+
 Changes between 3.1 and 3.2:
 ----------------------------
   * Fix HEVC support
